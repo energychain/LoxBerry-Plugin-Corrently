@@ -8,7 +8,7 @@ $navbar[2]['active'] = True;
 
 
 $L = LBSystem::readlanguage("language.ini");
-$template_title = "aWATTar Plugin";
+$template_title = "Corrently Plugin";
 $helplink = "https://www.loxwiki.eu/x/woDPAw";
 $helptemplate = "help.html";
 
@@ -24,7 +24,7 @@ LBWeb::lbheader($template_title, $helplink, $helptemplate);
 	color:green;
 
 }
-#overlay 
+#overlay
 {
   display: none !important;
 }
@@ -76,7 +76,7 @@ LBWeb::lbheader($template_title, $helplink, $helptemplate);
 </p>
 <p class="hint">
 	<b>Tipp für die Ausnahmen:</b> Mit Tab und Leertaste kannst du schnell viele Häkchen setzen!
-</p> 
+</p>
 
 <!-- Device Section -->
 
@@ -117,7 +117,7 @@ LBWeb::lbfooter();
 
 <!-- We use templates to generate the UI by JavaScript -->
 
-<template id="deviceTemplate"> 
+<template id="deviceTemplate">
 <!-- Template for a device -->
 	<form id="form_#DEVICEUID" onsubmit="return false;">
 
@@ -156,7 +156,7 @@ LBWeb::lbfooter();
 		<!-- Device Excludes Collapsible and table header -->
 		<div data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" id="collapsible_#DEVICEUID">
 			<h4>Ausnahmen pro Tag</h4>
-		
+
 			<table class="daytable">
 				<tr>
 					<th class="dayname">
@@ -196,7 +196,7 @@ LBWeb::lbfooter();
 			<button class="ui-btn ui-btn-icon-left ui-icon-action button_templates" id="tmpl_#DEVICEUID" data-inline="true">Loxone Geräte-Vorlage</button>
 		</div>
 		<div style="text-align:center;" id="messages_#DEVICEUID"></div>
-		
+
 	</div>
 	</form>
 </template>
@@ -242,14 +242,14 @@ $( document ).ready(function() {
 
 	// We parse the json that was written to a hidden div
 	config = JSON.parse( $("#jsonconfig").text() );
-	
+
 	// First we create the device forms for each device from the config
 	createDeviceBlocksFromConfig();
 	// Then, we fill up all the values in the form
 	formFill();
 	// If we have dependencies to view or hide fields, do this in viewhide()
 	viewhide();
-	
+
 	// Click handler for Add New Device button
 	$('#adddevice').click(function() { addDevice(); });
 
@@ -263,10 +263,10 @@ function addDevice()
 	createDeviceBlock(newDevId);
 	// Save message and handler for changes od the device
 	$('#messages_'+newDevId).html('<span style="color:red">Unsaved</span>');
-	$('#device_'+newDevId+' input').change(function() { 
+	$('#device_'+newDevId+' input').change(function() {
         $('#messages_'+newDevId).html('<span style="color:red">Unsaved changes</span>');
-	}); 
-	
+	});
+
 }
 
 /* Function to create a UID */
@@ -287,34 +287,34 @@ function viewhide()
 	} else {
 		$(".ownbroker").fadeIn();
 	}
-	
+
 	if( $("#country").val() == "DE" ) {
 		$(".country").fadeOut();
 	} else {
 		$(".country").fadeIn();
 	}
-*/	
-	
+*/
+
 }
 
 /* Read the config and fill in all the form fields */
 function formFill()
 {
 	console.log("formFill");
-	
+
 	// Country selection
 	if (typeof config.general.country !== 'undefined') $("#country").val( config.general.country ).attr('selected', true).siblings('option').removeAttr('selected');
 	$("#country").selectmenu("refresh", true);
-	
+
 	// Token
 	if (typeof config.general.token !== 'undefined') $("#token").val( config.general.token );
-	
+
 	// Price modifier
 	if (typeof config.general.pricemodifier !== 'undefined') $("#pricemodifier").val( config.general.pricemodifier );
-	
+
 	if( typeof mqttconfig !== 'undefined') {
 		if (typeof mqttconfig.usemqttgateway !== 'undefined') {
-			if( is_enabled(mqttconfig.usemqttgateway) ) 
+			if( is_enabled(mqttconfig.usemqttgateway) )
 				$("#MQTTUseMQTTGateway").prop('checked', mqttconfig.usemqttgateway).checkboxradio('refresh');
 		}
 		if (typeof mqttconfig.topic !== 'undefined') $("#MQTTTopic").val( mqttconfig.topic );
@@ -323,24 +323,24 @@ function formFill()
 		if (typeof mqttconfig.username !== 'undefined') $("#BrokerUsername").val( mqttconfig.username );
 		if (typeof mqttconfig.password !== 'undefined') $("#BrokerPassword").val( mqttconfig.password );
 	}
-	
+
 	// Adviser settings
 	$.each( config.adviser, function(deviceUid, deviceObj){
 		// console.log(deviceUid, deviceObj);
 		// Normal fields
 		if(typeof deviceObj.devicename !== 'undefined') $('#CONFIG\\.adviser\\.'+deviceUid+'\\.devicename').val( deviceObj.devicename );
 		if(typeof deviceObj.deviceduration !== 'undefined') $('#CONFIG\\.adviser\\.'+deviceUid+'\\.deviceduration').val( deviceObj.deviceduration );
-	
+
 		// Loop the days
 		$.each( deviceObj.excludes, function(excludeDay, excludeDayObj){
 			//console.log(excludeDay, excludeDayObj);
-			
+
 			// Loop the hours
-			$.each(excludeDayObj, function(excludeHour, excludeHourVal){ 
+			$.each(excludeDayObj, function(excludeHour, excludeHourVal){
 				// Check the checkboxes
 				//console.log("excludeHour", excludeHour, excludeHourVal);
 				if(is_enabled(excludeHourVal)) $('#'+deviceUid+'\\.excludes\\.'+excludeDay+'\\.'+excludeHour).prop( 'checked', true );
-			});	
+			});
 		});
 	});
 }
@@ -348,12 +348,12 @@ function formFill()
 /* For every device in the config, create a html block */
 function createDeviceBlocksFromConfig()
 {
-	$.each( config.adviser, function(deviceUid, deviceObj){	
+	$.each( config.adviser, function(deviceUid, deviceObj){
 		createDeviceBlock(deviceUid);
 		$('#messages_'+deviceUid).html('');
-	$('#device_'+deviceUid+' input').change(function() { 
+	$('#device_'+deviceUid+' input').change(function() {
         $('#messages_'+deviceUid).html('<span style="color:red">Unsaved changes</span>');
-	}); 
+	});
 	});
 }
 
@@ -361,14 +361,14 @@ function createDeviceBlocksFromConfig()
 function createDeviceBlock(deviceUid)
 {
 	console.log("createDeviceBlock", deviceUid);
-	
+
 	// Copy device template to a new element
 	let templateBlock = $('#deviceTemplate');
 	let deviceBlock = templateBlock.html();
 
 	// Add weekday template to new element
-	
-	deviceBlock = deviceBlock.replace(/<!--#DAYTEMPLATE-->/g, 
+
+	deviceBlock = deviceBlock.replace(/<!--#DAYTEMPLATE-->/g,
 		createWeekdayBlock("Montag", 1) +
 		createWeekdayBlock("Dienstag", 2) +
 		createWeekdayBlock("Mittwoch", 3) +
@@ -378,15 +378,15 @@ function createDeviceBlock(deviceUid)
 		createWeekdayBlock("Sonntag", 0)
 	);
 	//console.log("tableEnd after", tableEnd);
-	
+
 	deviceBlock = deviceBlock.replace(/#DEVICEUID/g, deviceUid);
-	
+
 	// console.log("tableEnd after", tableEnd);
 	// console.log("deviceBlock after", deviceBlock);
-	
+
 	$(deviceBlock).appendTo("#devices");
 	$("#collapsible_"+deviceUid).collapsible().trigger("create");
-	
+
 	$("#save_"+deviceUid).click(function(){ saveapply(deviceUid); });
 	$("#delete_"+deviceUid).click(function(){ saveapply(deviceUid, "delete"); });
 	$("#tmpl_"+deviceUid).click(function(){ saveapply(deviceUid, "template"); });
@@ -397,34 +397,34 @@ function createWeekdayBlock(dayName, dayId)
 {
 		// console.log("createWeekdayBlock", dayName, dayId);
 		let weekdayTemplate = $('#weekdayTemplate');
-		
+
 		weekdayBlock = weekdayTemplate.html();
 		weekdayBlock = weekdayBlock.replace(/#DAYNAME/g, dayName);
 		weekdayBlock = weekdayBlock.replace(/#WEEKDAY/g, dayId);
-		
+
 		// var weekdayBlock = weekdayTemplate.html().replace(/#DAYNAME/, dayName).replace(/#WEEKDAY/, dayId);
-		
+
 		// console.log("weekdayBlock", weekdayBlock);
 		return weekdayBlock;
 }
 
 /* Ajax call to save or delete entries in the config */
-function saveapply(deviceUid, action="save") 
+function saveapply(deviceUid, action="save")
 {
 	console.log("saveapply called with deviceUid", deviceUid, "and action", action);
 	$("#messages_"+deviceUid).html("Submitting...");
 	$("#messages_"+deviceUid).css("color", "grey");
-	
+
 	var values;
-	
+
 	// Depending on the action, send different data to the server
 	switch (action) {
 		// Save all data of deviceUid
 		case "template":
 		case "save":
 			var posturl = "ajax-handler.php?action=saveconfig";
-			
-			// Handle checkboxes: If checkbox is disabled, 
+
+			// Handle checkboxes: If checkbox is disabled,
 			/* Get input values from form */
 			values = $("#form_"+deviceUid).serializeArray();
 			console.log("Values", values);
@@ -436,32 +436,32 @@ function saveapply(deviceUid, action="save")
 							// console.log("Checkbox", this.name, "Value", this.value);
 				return {"name": this.name, "value": "off"}
 				}).get()
-			);	
+			);
 			break;
-		
+
 		// Delete the deviceUid tree
 		case "delete":
 			var posturl = "ajax-handler.php?action=deletetree";
 			values = { deletetree: 'CONFIG.adviser.'+deviceUid };
 			break;
-	}	
-	
+	}
+
 	$.post( posturl, values )
 	.done(function( data ) {
 		console.log("Done:", data);
 		$("#messages_"+deviceUid).html("Erfolgreich gespeichert");
 		$("#messages_"+deviceUid).css("color", "green");
-		
+
 		if(action == "delete") {
-			$('#device_'+deviceUid).fadeOut(500, function(){$('#device_'+deviceUid).remove()});	
+			$('#device_'+deviceUid).fadeOut(500, function(){$('#device_'+deviceUid).remove()});
 		}
-		
+
 		console.log("Response data", data, "Action", action);
 		config = data.CONFIG;
 		mqttconfig = data.MQTT;
-		
+
 		formFill();
-		
+
 		// Send Loxone Template if requested
 		if( action == "template" ) {
 			deviceName = 'advise/' + $("#CONFIG\\.adviser\\."+deviceUid+"\\.devicename").val();
@@ -473,26 +473,21 @@ function saveapply(deviceUid, action="save")
 		console.log("Fail:", error, textStatus, errorThrown);
 		$("#savemessages").html("Error "+error.status+": "+error.responseJSON.error);
 		$("#savemessages").css("color", "red");
-		
+
 	});
 }
-	
+
 
 
 /* A simple is_enabled function as known from LoxBerry's Perl and PHP SDK */
-function is_enabled( checkVal ) 
+function is_enabled( checkVal )
 {
 	// console.log("is_enabled", checkVal);
 	if( typeof checkVal === 'undefined' ) return false;
-	
+
 	enabled = [ true, "true", 1, "1", "on", "yes", "enable", "enabled", "select", "selected", "checked" ];
 	checkVal = checkVal.trim().toLowerCase();
 	return enabled.includes(checkVal);
 }
 
 </script>
-
-
-
-
-
