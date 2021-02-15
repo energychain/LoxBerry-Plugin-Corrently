@@ -7,11 +7,11 @@ $cfg = json_decode( file_get_contents($configfile) );
 $mqttcfg = json_decode( file_get_contents($mqttconfigfile) );
 
 if( isset($_GET["action"]) && $_GET["action"] == "saveconfig" ) {
-	
+
 	foreach( $_POST as $key => $value ) {
 		// PHP's $_POST converts dots of post variables to underscores
 		// $data = generateNew($data, explode("_", $key), 0, $value);
-		
+
 		$tree = explode("_", $key);
 		if( $tree[0] == 'CONFIG' ) {
 			// Changing base config
@@ -20,9 +20,9 @@ if( isset($_GET["action"]) && $_GET["action"] == "saveconfig" ) {
 			// Changing mqtt config
 			$forkobj = $mqttcfg;
 		}
-		
+
 		// Only set values if $forkobj really exists
-		if( is_object($forkobj) ) {		
+		if( is_object($forkobj) ) {
 			for ( $fork = 1; $fork < count($tree)-1; $fork++ ) {
 				error_log("fork $fork is " . $tree[$fork]);
 				if( !is_object($forkobj->{$tree[$fork]}) ) {
@@ -35,26 +35,26 @@ if( isset($_GET["action"]) && $_GET["action"] == "saveconfig" ) {
 			error_log("Writing to " . $tree[count($tree)-1] . " value " . $value);
 			$forkobj->{$tree[count($tree)-1]} = $value;
 			unset($forkobj);
-		}	
+		}
 	}
-	
+
 	// error_log("cfg data now:\n" . var_export($cfg, true));
 	// error_log("mqtt data now:\n" . var_export($mqttcfg, true));
-	
+
 	file_put_contents( $configfile, json_encode($cfg, JSON_PRETTY_PRINT) );
 	file_put_contents( $mqttconfigfile, json_encode($mqttcfg, JSON_PRETTY_PRINT) );
-	
-	// Run aWATTar script
-	shell_exec("php " . LBPBINDIR."/awattar.php");
-	
+
+	// Run Corrently script
+	shell_exec("php " . LBPBINDIR."/corrently.php");
+
 	$jsonstr = json_encode( array( 'CONFIG' => $cfg, 'MQTT' => $mqttcfg));
 	sendresponse( 200, "application/json", $jsonstr );
-	
+
 	exit(1);
 }
 
 if( isset($_GET["action"]) && $_GET["action"] == "deletetree" && isset($_POST["deletetree"]) ) {
-	
+
 		error_log("Action deletetree");
 		$tree = explode(".", $_POST["deletetree"]);
 		if( $tree[0] == 'CONFIG' ) {
@@ -66,9 +66,9 @@ if( isset($_GET["action"]) && $_GET["action"] == "deletetree" && isset($_POST["d
 		} else {
 			error_log("Neither CONFIG nor MQTT was sent");
 		}
-		
+
 		// Only set values if $forkobj really exists
-		if( is_object($forkobj) ) {		
+		if( is_object($forkobj) ) {
 			for ( $fork = 1; $fork < count($tree)-1; $fork++ ) {
 				error_log("fork $fork is " . $tree[$fork]);
 				if( !is_object($forkobj->{$tree[$fork]}) ) {
@@ -85,20 +85,20 @@ if( isset($_GET["action"]) && $_GET["action"] == "deletetree" && isset($_POST["d
 			} else {
 				error_log("Nothing deleted.");
 			}
-		}	
-	
+		}
+
 	// error_log("cfg data now:\n" . var_export($cfg, true));
 	// error_log("mqtt data now:\n" . var_export($mqttcfg, true));
-	
+
 	file_put_contents( $configfile, json_encode($cfg, JSON_PRETTY_PRINT) );
 	file_put_contents( $mqttconfigfile, json_encode($mqttcfg, JSON_PRETTY_PRINT) );
-	
+
 	// Run aWATTar script
-	shell_exec("php " . LBPBINDIR."/awattar.php");
-	
+	shell_exec("php " . LBPBINDIR."/corrently.php");
+
 	$jsonstr = json_encode( array( 'CONFIG' => $cfg, 'MQTT' => $mqttcfg));
 	sendresponse( 200, "application/json", $jsonstr );
-	
+
 	exit(1);
 }
 
@@ -131,7 +131,7 @@ exit(1);
 function sendresponse( $httpstatus, $contenttype, $response = null )
 {
 
-$codes = array ( 
+$codes = array (
 	200 => "OK",
 	204 => "NO CONTENT",
 	304 => "NOT MODIFIED",
@@ -142,10 +142,10 @@ $codes = array (
 	501 => "NOT IMPLEMENTED"
 );
 	if(isset($_SERVER["SERVER_PROTOCOL"])) {
-		header($_SERVER["SERVER_PROTOCOL"]." $httpstatus ". $codes[$httpstatus]); 
+		header($_SERVER["SERVER_PROTOCOL"]." $httpstatus ". $codes[$httpstatus]);
 		header("Content-Type: $contenttype");
-	} 
-	
+	}
+
 	if($response) {
 		echo $response . "\n";
 	}

@@ -6,7 +6,7 @@ register_shutdown_function('shutdown');
 function shutdown()
 {
 	global $log, $result_dataset, $resultfile;
-	
+
 	// Save data
 	if( isset($result_dataset) && isset($resultfile) ) {
 		LOGOK("Writing temporary result file to disk");
@@ -37,8 +37,8 @@ if(!empty($options['delay'])) {
 
 $result_dataset = array();
 
-$countries = array ( "AT" => "https://api.awattar.com/v1/marketdata",
-					 "DE" => "https://api.awattar.de/v1/marketdata"
+$countries = array (
+					 "DE" => "https://api.corrently.io/v2.0/marketdata"
 );
 
 LOGINF("Reading config file $configfile");
@@ -76,15 +76,15 @@ exit(0);
 function get_pricing($dataurl, $token, $pricefile)
 {
 	global $result_dataset;
-	
+
 	$curr_date = date('Y-m-d', time());
 	if(file_exists($pricefile)) {
 		$modified = filemtime($pricefile);
 	}
-	if(!empty($modified)) { 
+	if(!empty($modified)) {
 		$modified_date = date('Y-m-d', $modified);
 	}
-		
+
 	if( !file_exists($pricefile) or $curr_date != $modified_date ) {
 		if(file_exists($pricefile)) {
 			unlink($pricefile);
@@ -99,24 +99,24 @@ function get_pricing($dataurl, $token, $pricefile)
 		$dataobj = json_decode($data);
 		if ( empty($dataobj) ) {
 			LOGCRIT("Dataset is empty or result json is invalid");
-			LOGERR("Response from aWATTar API: [");
+			LOGERR("Response from Corrently API: [");
 			LOGERR("<<< " . $data . " >>>");
 			exit(1);
 		} elseif ( isset($dataobj->error) ) {
-			LOGCRIT("aWATTar explicitely returned error <<< " . $dataobj->error->type . " >>>");
+			LOGCRIT("Corrently explicitely returned error <<< " . $dataobj->error->type . " >>>");
 			LOGERR("<<< " . $dataobj->error->message . " >>>");
 			exit(1);
 		}
-		
+
 		// DOTO: Parse data; get timestamp of data. If old timestamp, do not save file
-		
+
 		LOGDEB("Writing result to $pricefile");
 		file_put_contents( $pricefile, $data );
 	} else {
 		LOGINF("Getting data from local file...");
 		$data = file_get_contents($pricefile);
 	}
-	
+
 	$result_dataset['date']['now'] = date('Y-m-d H:m', time());
 	$result_dataset['date']['now_epoch'] = time();
 	$result_dataset['date']['now_loxtime'] = epoch2lox();
@@ -125,7 +125,7 @@ function get_pricing($dataurl, $token, $pricefile)
 	$result_dataset['date']['fetch_epoch'] = $filemtime;
 	$result_dataset['date']['fetch_loxtime'] = epoch2lox($filemtime);
 	$result_dataset['date']['weekday'] = date('w');
-	
+
 	return json_decode($data);
 
 }
@@ -133,10 +133,10 @@ function get_pricing($dataurl, $token, $pricefile)
 //
 // Change price from MWh to kWh, and apply price modifier
 //
-function prepare_prices($pricing) 
+function prepare_prices($pricing)
 {
 	global $cfg;
-	
+
 	$pricemodifier = $cfg->general->pricemodifier;
 	if(!empty($pricemodifier)) {
 		LOGOK("Price modifier $pricemodifier will be applied to prices");
@@ -171,7 +171,7 @@ function prepare_prices($pricing)
 function price_stats($pricing)
 {
 	global $result_dataset, $currenthour_e;
-	
+
 	$currentprice = null;
 	$lowestprice = null;
 	$highestprice = null;
@@ -182,7 +182,7 @@ function price_stats($pricing)
 	$daily_spread = null;
 	$diff_to_median = null;
 	$diff_to_average = null;
-	
+
 
 	foreach ($pricing->data as $price) {
 
@@ -191,14 +191,14 @@ function price_stats($pricing)
 		}
 		LOGDEB(date('H:i', $price->start_timestamp/1000) . " " . $price->marketprice);
 		$result_dataset['prices']['hour_'. date('H', $price->start_timestamp/1000) ] = $price->marketprice;
-			
+
 		// Save marketprice in an array to sort it later
 		$price_arr[date('G', $price->start_timestamp/1000)] = $price->marketprice;
-		
+
 		// for average
 		$helper_count++;
 		$helper_total+=$price->marketprice;
-		
+
 		// for min/max
 		if(is_null($lowestprice) || $price->marketprice < $lowestprice) {
 			$lowestprice = $price->marketprice;
@@ -231,7 +231,7 @@ function price_stats($pricing)
 		if($price == $currentprice) {
 			$price_ranking = $threshold;
 		}
-	}	
+	}
 	LOGINF("Current Price ranking: $price_ranking. lowest price");
 
 	$result_dataset['price']['hour'] = date('H', intval($currenthour_e/1000));
@@ -244,43 +244,43 @@ function price_stats($pricing)
 	$result_dataset['price']['spread'] = $daily_spread;
 	$result_dataset['price']['diff2median'] = $diff_to_median;
 	$result_dataset['price']['diff2average'] = $diff_to_average;
-	
-	
+
+
 }
 
-// 
+//
 // Run through all Advicer devices
 //
-function calc_advises($pricing) 
+function calc_advises($pricing)
 {
 	global $cfg;
 	$advises = array ();
-	
+
 	foreach($cfg->adviser as $deviceUid => $deviceObj) {
 		LOGINF("Advise Settings for " . $deviceUid . " (" . $deviceObj->devicename . ")");
 		calc_advice($pricing, $deviceUid, $deviceObj);
 	}
-	
-}	
+
+}
 
 //
 // Calculate advises for a specific device
 //
-function calc_advice($pricing, $deviceUid, $deviceObj) 
+function calc_advice($pricing, $deviceUid, $deviceObj)
 {
 	global $cfg, $result_dataset, $currenthour_e;
-	
+
 	$currenthour = date('H', intval($currenthour_e/1000));
-	
+
 	$adv_name = $deviceObj->devicename;
 	$dur = $deviceObj->deviceduration;
-	
+
 	$result_dataset['advise'][$adv_name]['device'] = $adv_name;
 	$result_dataset['advise'][$adv_name]['deviceuid'] = $deviceUid;
 	$result_dataset['advise'][$adv_name]['duration'] = $dur;
-	
+
 	$weekday = date('w');
-	
+
 	// Convert exclude properties to array
 	$excludeObj = $deviceObj->excludes->$weekday;
 	$excludes = array();
@@ -289,14 +289,14 @@ function calc_advice($pricing, $deviceUid, $deviceObj)
 			array_push($excludes, $hour);
 		}
 	}
-	
+
 	LOGINF("Today is " . WEEKDAY[$weekday] . " ($weekday). Excluded hours: " . join(" ", $excludes));
-	
+
 	LOGDEB("Elements in price list: " . count((array)$pricing->data));
-	
+
 	$adv_lowest = null;
 	$adv_lowest = array();
-	
+
 	for ($i = 0; $i < count((array)$pricing->data); $i++) {
 		$priceobj = $pricing->data[$i];
 		$price_hour = date('H', $priceobj->start_timestamp/1000);
@@ -310,7 +310,7 @@ function calc_advice($pricing, $deviceUid, $deviceObj)
 		// Look into the future
 		$avg = null;
 		for ($j = $i; $j < ($i+$dur); $j++) {
-			
+
 			if( isset($pricing->data[$j]) ) {
 				$future_hour = date('H', $pricing->data[$j]->start_timestamp/1000);
 				if( in_array($future_hour, $excludes) ) {
@@ -332,17 +332,17 @@ function calc_advice($pricing, $deviceUid, $deviceObj)
 			unset($adv_lowest[$price_hour]);
 		}
 	}
-	
+
 	foreach($adv_lowest as $hour => $average) {
 		LOGDEB("Avg. price for $dur hours at $hour: " . $average);
 	}
-	
+
 	asort($adv_lowest);
 	LOGINF("Cheapest hour      : " . key($adv_lowest));
 	LOGINF("Cheapest in        : " . (key($adv_lowest)-date('H')) . " hours");
 	LOGINF("Cheapest avg price : " . $adv_lowest[key($adv_lowest)]);
-	
-	
+
+
 	$result_dataset['advise'][$adv_name]['low_hour'] = key($adv_lowest);
 	$result_dataset['advise'][$adv_name]['low_in'] = (key($adv_lowest)-date('H'));
 	$result_dataset['advise'][$adv_name]['low_price_avg'] = $adv_lowest[key($adv_lowest)];
@@ -354,7 +354,7 @@ function calc_advice($pricing, $deviceUid, $deviceObj)
 		LOGINF("Cheapest phase: Not in cheapest phase");
 		$result_dataset['advise'][$adv_name]['low_price_active'] = "0";
 	}
-	
+
 	arsort($adv_lowest);
 	LOGINF("Expensive hour: " . key($adv_lowest));
 	LOGINF("Expensive in     : " . (key($adv_lowest)-date('H')) . " hours");
@@ -369,7 +369,7 @@ function calc_advice($pricing, $deviceUid, $deviceObj)
 		LOGINF("Expensive phase: Not in most expensive phase");
 		$result_dataset['advise'][$adv_name]['high_price_active'] = "0";
 	}
-	
+
 }
 
 
@@ -384,34 +384,34 @@ function calculate_median($arr) {
         $median = (($low+$high)/2);
     }
     return $median;
-}	
-	
+}
+
 function mqtt_send()
 {
 	global $mqttconfigfile, $result_dataset;
-	
+
 	require_once "loxberry_io.php";
 	require_once "phpMQTT/phpMQTT.php";
-	
+
 	LOGINF("Reading MQTT config from plugin");
-	
+
 	$mqttcfg = @json_decode(file_get_contents($mqttconfigfile));
-	
+
 	if (empty($mqttcfg)) {
 		LOGWARN("Plugin's mqtt config is invalid. Creating a new mqtt config file");
 		// Create default mqtt config
 		$mqttcfg = new \stdClass();
 		$mqttcfg->usemqttgateway = "true";
-		$mqttcfg->topic = "awattar";
+		$mqttcfg->topic = "corrently";
 		$mqttcfg->username = "";
 		$mqttcfg->password = "";
 		$mqttcfg->server = "";
 		$mqttcfg->port = "";
 		file_put_contents($mqttconfigfile, json_encode($mqttcfg));
 	}
-	
-	$basetopic = !empty($mqttcfg->topic) ? $mqttcfg->topic : "awattar";
-	
+
+	$basetopic = !empty($mqttcfg->topic) ? $mqttcfg->topic : "corrently";
+
 	if(is_enabled($mqttcfg->usemqttgateway)) {
 		$creds = mqtt_connectiondetails();
 	} else {
@@ -420,9 +420,9 @@ function mqtt_send()
 		$creds['brokeruser'] = $mqttcfg->username;
 		$creds['brokerpass'] = $mqttcfg->password;
 	}
-	
+
 	$client_id = uniqid(gethostname()."_client");
-	
+
 	$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
 
 	LOGINF("Connecting to MQTT broker (" . $creds['brokerhost'] . ":". $creds['brokerport'] .", User " . $creds['brokeruser'].")");
@@ -457,10 +457,10 @@ function flatten($array, $prefix = '') {
     return $result;
 }
 
-function curl_download ( $url, $token ) 
+function curl_download ( $url, $token )
 {
 	$handle = curl_init();
-	 
+
 	// Set the url
 	curl_setopt($handle, CURLOPT_URL, $url);
 	// Set the result output to be a string.
@@ -469,9 +469,9 @@ function curl_download ( $url, $token )
 		curl_setopt($handle, CURLOPT_HTTPHEADER, array("Authorization: Bearer $token"));
 	}
 	$output = curl_exec($handle);
-	 
+
 	curl_close($handle);
-	 
-	return $output;	
-	
+
+	return $output;
+
 }

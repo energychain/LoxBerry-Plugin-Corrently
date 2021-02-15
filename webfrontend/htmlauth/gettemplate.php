@@ -14,7 +14,7 @@ foreach ($argv as $arg) {
     $e=explode("=",$arg);
     if(count($e)==2)
         $_GET[$e[0]]=$e[1];
-    else   
+    else
         $_GET[$e[0]]=0;
 }
 
@@ -25,7 +25,7 @@ $desttemplate = rtrim($desttemplate, '/') . '/';
 // Generate human-readable name from $desttemplate
 $templatename = rtrim($desttemplate, '/');
 $slashpos = strrpos($templatename, "/");
-if ($slashpos != false) { 
+if ($slashpos != false) {
 	$templatename = substr( $templatename, $slashpos+1 );
 }
 $templatename = ucfirst( $templatename );
@@ -38,13 +38,13 @@ $topic = $mqttcfg->topic;
 // Read result file
 $resultcfg = @json_decode(file_get_contents($resultfile), true );
 
-// Create a flat array from nested array 
+// Create a flat array from nested array
 $flatresult = flatten( $resultcfg );
 
 // Create the VI
 $VIhttp = new VirtualInHttp( [
-    "Title" => "$templatename (aWATTar)",
-    "Comment" => "created by LoxBerry aWATTar Plugin",
+    "Title" => "$templatename (Corrently)",
+    "Comment" => "based onLoxBerry aWATTar Plugin",
 	"Address" => "",
 	"PollingTime" => "3600"
 ] );
@@ -53,7 +53,7 @@ foreach($flatresult as $key=>$value) {
 	if( strncmp( $key, $desttemplate, strlen($desttemplate)) != 0) {
 		continue;
 	}
-	
+
 	$fulltopic = str_replace( '/', '_', $topic.'_'.$key);
 	$comment = substr( strrchr( $key, '/' ), 1 );
 	LOGDEB("Key $key Comment '$comment' (Topic $fulltopic)");
@@ -63,12 +63,12 @@ foreach($flatresult as $key=>$value) {
 		"Comment" => $comment,
 	] );
 }
-	
+
 $xml = $VIhttp->output();
 // Add BOM
 $xml = chr(239) . chr(187) . chr(191) . $xml;
 
-$xmlfilename = "VI_".$templatename." (aWATTar).xml";
+$xmlfilename = "VI_".$templatename." (Corrently).xml";
 
 // Send download response
 header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
